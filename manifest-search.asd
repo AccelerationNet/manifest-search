@@ -8,22 +8,20 @@
 (in-package manifest-search.system)
 
 (defsystem :manifest-search
-  :description "A library providing various collector type macros
-   pulled from arnesi into its own library and stripped of dependencies"
+  :description "index and search common lisp documentation using montezuma and manifest"
   :licence "BSD"
   :version "0.1"
   :components ((:file "manifest-search"))
   :depends-on (:alexandria :collectors :iterate :manifest :montezuma))
 
-(defsystem :manifest-search-test
-  :description "A library providing various collector type macros
-   pulled from arnesi into its own library"
-  :licence "BSD"
-  :version "0.1"
-  :components ((:module :tests
-			:serial t
-			:components ((:file "manifest-search"))))
-  :depends-on (:manifest-search :lisp-unit))
+;; (defsystem :manifest-search-test
+;;   :description "a test for manifest-search"
+;;   :licence "BSD"
+;;   :version "0.1"
+;;   :components ((:module :tests
+;; 			:serial t
+;; 			:components ((:file "manifest-search"))))
+;;   :depends-on (:manifest-search :lisp-unit))
 
 (defmethod asdf:perform ((o asdf:test-op) (c (eql (find-system :manifest-search))))
   (asdf:oos 'asdf:load-op :manifest-search-test))
