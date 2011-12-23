@@ -78,6 +78,9 @@ CLOSER-COMMON-LISP:SYMBOL-PLIST <FUNCTION : 1.3472456>
  * Refreshing data in the index when it changes or periodically
  * Produce manifest links
  * Add search screen to manifest that ties into this system
+ * Add a documentation index into the quicklisp system so that 
+   users can search through the documentation of systems they have
+   not yet installed (and thus discover functionality they could use)
 
 ## License
 
