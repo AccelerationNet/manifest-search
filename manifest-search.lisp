@@ -7,6 +7,7 @@
    :index-package
    :index-pacakges
    :search-manifest
+   :print-index-contents
    ))
 
 (in-package :manifest-search)
