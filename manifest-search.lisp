@@ -12,7 +12,6 @@
 (defparameter *cl-doc-index*
   (make-instance
    'montezuma:index
-   :path "~/lisp/doc-index"
    :default-field "*"))
 
 (defun join-strings (list
@@ -82,6 +81,13 @@
         (add-to-index name what package)))
     ))
 
+(defun index-packages (&key
+                       (packages (list-all-packages))
+                       (exclude-packages))
+  (iter (for p in packages)
+    (unless (member packages exclude-packages :key #'find-package)
+      (index-package p))))
+
 (defun get-doc (idx)
   "Get a document for the thing passed in"
   (etypecase idx
@@ -99,8 +105,9 @@
       ;; this breaks when the field doesnt exist
       (montezuma:document-value doc field))))
 
-(defun print-index-contents ()
+(defun print-index-contents ( &optional (limit 1000) )
   (iter (for i upfrom 0)
+    (when limit (while (< i limit)))
     (for d = (get-doc i))
     (while d)
     (format T "~A:~A:~A~%"
@@ -108,7 +115,7 @@
             (doc-value d :name)
             (doc-value d :type))))
 
-(defun search-manifest (phrase)
+(defun search-manifest (phrase &optional (show-docs? t))
   (montezuma:search-each
    *cl-doc-index*
    phrase
@@ -117,5 +124,17 @@
              (doc-value d :package)
              (doc-value d :name)
              (doc-value d :type)
-             score))))
+             score)
+     (when show-docs?
+       (format T "~4T~A~%~%" (doc-value d :documentation))))
+   (list :num-docs 25)))
+
+(defun ql-installed-systems ()
+  (iter (for d in (ql-dist:enabled-dists))
+    (appending (ql-dist:installed-systems d))))
+
+(defun asdf-loaded-systems () asdf::*defined-systems*)
+
+
+
 
