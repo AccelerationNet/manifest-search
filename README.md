@@ -12,10 +12,15 @@ a running lisp system effectively.
 
 ## Example
 
-{{{
-(index-packages)
-(search-manifest "*list*")
-}}}
+```
+;; adds all documentation for the running lisp to the search index
+(index-packages) 
+
+;; searches all docs for ones that MUST contain plist
+(search-manifest "+plist")
+```
+
+## License
 
 ```
 ;; Copyright (c) 2011 Russ Tyndall , Acceleration.net http://www.acceleration.net
