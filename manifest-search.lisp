@@ -11,6 +11,8 @@
    :print-index-contents
    :load-index
    :close-index
+   :reload-index
+   :switch-index
    :+index-path+
    :ql-installable-systems
    ))
@@ -67,9 +69,20 @@
 (load-index)
 
 (defun close-index ()
-  (montezuma:flush *cl-doc-index*)
-  (montezuma:close *cl-doc-index*)
-  (setf *cl-doc-index* nil))
+  "Closes an index"
+  (when *cl-doc-index*
+    (montezuma:flush *cl-doc-index*)
+    (montezuma:close *cl-doc-index*)
+    (setf *cl-doc-index* nil)))
+
+(defun switch-index (path)
+  (close-index)
+  (setf +index-path+ path)
+  (load-index))
+
+(defun reload-index ()
+  (close-index)  
+  (load-index))
 
 
 (defun doc-fn (type)
