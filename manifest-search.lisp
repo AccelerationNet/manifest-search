@@ -44,9 +44,13 @@
 (defparameter +index-path+ #P"~/quicklisp/doc-index"
               "The location of the persistent document-index")
 
-(defvar *cl-doc-index* )
+(defvar *cl-doc-index* nil
+  "The main index we will use to store our common lisp documentation
+   Load it by calling load-index, close by calling close-index")
 
 (defun load-index ()
+  "Loads the default index from +index-path+
+   will not load if there is already an index in play"
   (unless *cl-doc-index*
     (setf *cl-doc-index*
           (make-instance
