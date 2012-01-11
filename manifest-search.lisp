@@ -6,8 +6,13 @@
   (:export
    :index-package
    :index-packages
+   :indexed-packages
    :search-manifest
    :print-index-contents
+   :load-index
+   :close-index
+   :+index-path+
+   :ql-installable-systems
    ))
 
 (in-package :manifest-search)
@@ -36,7 +41,8 @@
     (list (join-strings thing))
     (t (princ-to-string thing))))
 
-(defparameter +index-path+ #P"~/lisp/doc-index")
+(defparameter +index-path+ #P"~/quicklisp/doc-index"
+              "The location of the persistent document-index")
 
 (defvar *cl-doc-index* )
 
