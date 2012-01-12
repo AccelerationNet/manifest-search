@@ -155,13 +155,20 @@
                   :index index
                   :delete? nil)))
 
+(defun package-for-name (name)
+  (etypecase name
+    (symbol (package-name (symbol-package name)))
+    (cons (if (eql 'setf (first name))
+              (package-for-name (second name))
+              (error "No idea how to make package for name:~A" name)))))
+
 (defun index-package (package-name)
   "Add package documentation and docs for all public symbols to the index"
   (let ((package (find-package package-name)))
     (add-to-index package :package nil)
     (iter (for what in manifest::*categories*)
       (iter (for name in (manifest::names package what))
-        (for name-package = (package-name (symbol-package name)))
+        (for name-package = (package-for-name name))
         (add-to-index name what name-package)))
     ))
 
