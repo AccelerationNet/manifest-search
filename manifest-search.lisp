@@ -161,7 +161,7 @@
     (add-to-index package :package nil)
     (iter (for what in manifest::*categories*)
       (iter (for name in (manifest::names package what))
-        (for name-package = (pacakge-name (symbol-package name)))
+        (for name-package = (package-name (symbol-package name)))
         (add-to-index name what name-package)))
     ))
 
