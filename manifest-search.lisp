@@ -129,24 +129,40 @@
    (make-field :documentation (documentation package t))
    (make-field :readme (manifest::readme-text package))))
 
-(defun add-to-index (thing type &optional
-                     package (index *cl-doc-index*)
+(defun add-to-index (thing type package
+                     &key
+                       (index *cl-doc-index*)
+                       (delete? t)
                      &aux (doc-fn (doc-fn type))
-                     (new-doc (funcall doc-fn thing type package))
-                     )
+                       (new-doc (funcall doc-fn thing type package))
+                       )
   "add documentation for a specific thing of type from a package "
   (when new-doc
-    (montezuma:delete-document index (cl-doc-key-term package thing type))
+    (when delete?
+      (montezuma:delete-document index (cl-doc-key-term package thing type)))
     (montezuma:add-document-to-index index new-doc)
     (montezuma:flush index)))
+
+(defun ensure-in-index (thing type package
+                        &key
+                          (index *cl-doc-index*)
+                        &aux
+                          (doc-fn (doc-fn type))
+                          (new-doc (funcall doc-fn thing type package)))
+  "add documentation for a specific thing of type from a package "
+  (when (and new-doc (null (find-doc-by-key package thing type)))
+    (add-to-index thing type package
+                  :index index
+                  :delete? nil)))
 
 (defun index-package (package-name)
   "Add package documentation and docs for all public symbols to the index"
   (let ((package (find-package package-name)))
-    (add-to-index package :package)
+    (add-to-index package :package nil)
     (iter (for what in manifest::*categories*)
       (iter (for name in (manifest::names package what))
-        (add-to-index name what package)))
+        (for name-package = (pacakge-name (symbol-package name)))
+        (add-to-index name what name-package)))
     ))
 
 (defun index-packages (&key
