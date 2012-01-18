@@ -107,6 +107,9 @@
    (%to-s value)
    :index (if tokenize? :tokenized :untokenized)))
 
+(defun is-macro? (thing)
+  (ignore-errors (macro-function thing)))
+
 (defun make-default-doc (thing
                          &optional type package
                          &aux (docs (manifest::docs-for thing type)))
@@ -118,7 +121,7 @@
      (make-field :name thing nil)
      (make-field :search-name thing)
      (make-field :type (case type
-                         (:function (if (macro-function thing)
+                         (:function (if (is-macro? thing) 
                                         :macro
                                         :function))
                          (T type)) nil)
@@ -126,7 +129,9 @@
      (make-field :documentation docs)
      (case type
        (:function
-        (make-field :arglist (swank::arglist thing))))
+        (let ((arglist (ignore-errors (swank::arglist thing))))
+        (when arglist
+         (make-field :arglist arglist )))))
      )))
 
 (defun make-package-doc (package &optional (type :package) package-package)
