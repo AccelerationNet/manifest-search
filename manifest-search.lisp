@@ -8,6 +8,7 @@
    :index-packages
    :indexed-packages
    :search-manifest
+   :search-manifest-collecting
    :print-index-contents
    :load-index
    :close-index
@@ -226,7 +227,7 @@
 
 (defun print-default-search ( &optional (limit 1000) )
   "Prints the package, name and type of every document in the index (up to limit)"
-  (search-manifest "*" :n limit :show-docs? nil))
+  (search-manifest "*" :n limit :result-fn #'print-search-results))
 
 (defun print-index-contents ( )
   "Prints the package, name and type of every document in the index (up to limit)"
@@ -253,26 +254,48 @@
 (defun find-doc-by-key (package name type)
   (get-doc (cl-doc-key-term package name type)))
 
+(defun make-default-search-collector (result-collector)
+  (lambda (d &optional score)
+    (collectors:with-collector (rtn)
+      (iter (for n in (list :package :name :type :documentation))
+        (rtn n (doc-value d n)))
+      (when (eql :package (doc-value d :type))
+        (rtn :readme (doc-value d :readme)))
+      (rtn :score score)
+      (funcall result-collector (rtn)))))
+
+(defun print-search-results-documentation (d score &optional (show-docs? t) (stream t))
+  (print-doc d stream "{~a}" score)
+  (when show-docs?
+    (format stream "~4T~A~%~%" (doc-value d :documentation))))
+
+(defun print-search-results (d score &optional (stream t))
+  (print-doc d stream "{~a}" score))
+
 (defun search-manifest (phrase
-                        &key
-                          (stream T)
-                          (n 25)
-                          (show-docs? t))
+                        &key (result-fn #'print-search-results-documentation) (n 25))
+  "Searches through all of the known common lisp (in-process)
+   documentation for the query and displays the results
+
+   n: The n highest scoring documents will be printed to stdout
+  "
+  (montezuma:search-each *cl-doc-index* phrase result-fn (list :num-docs n)))
+
+(defun search-manifest-collecting (phrase &key
+                                            (result-builder #'make-default-search-collector)
+                                            (n 25))
   "Searches through all of the known common lisp (in-process)
    documentation for the query and displays the results
 
    n: The n highest scoring documents will be printed to stdout
 
-   if show-docs? is nil we will only print the package:name of
-   the objects that match"
-  (montezuma:search-each
-   *cl-doc-index*
-   phrase
-   (lambda (d score)
-     (print-doc d stream "{~a}" score)
-     (when show-docs?
-       (format stream "~4T~A~%~%" (doc-value d :documentation))))
-   (list :num-docs n)))
+
+  "  
+  (let ((rtn (collectors:make-collector)))
+    (montezuma:search-each
+     *cl-doc-index* phrase (funcall result-builder rtn)
+     (list :num-docs n))
+    (when rtn (funcall rtn))))
 
 (defun print-doc (d &optional (stream t) (message "") &rest args)
   (format stream "~%~A:~A <~A> ~?"
