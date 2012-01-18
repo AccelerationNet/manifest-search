@@ -224,6 +224,15 @@
         (for doc in (docs-for-term :package p))
         (funcall doc-fn doc)))))
 
+(defun docs-in-index (&key
+                        (include-packages? t)
+                        (include-contents? t)
+                      &aux (rtn (collectors:make-collector)))
+  "CAUTION: THIS MAY TAKE FOREVER AND CONSUME ALL YOUR MEMORY"
+  (munge-index rtn :include-packages? include-packages?
+                   :include-contents? include-contents? )
+  (funcall rtn))
+
 (defun %docs-for-term (n v fn)
   (let* ((term (make-term n v))
          (docs (montezuma::term-docs-for (montezuma:reader *cl-doc-index*) term)))
@@ -351,7 +360,3 @@
     (appending (ql-dist:provided-systems d))))
 
 (defun asdf-loaded-systems () asdf::*defined-systems*)
-
-
-
-
