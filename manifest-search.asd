@@ -12,7 +12,9 @@
   :licence "BSD"
   :version "0.1"
   :components ((:file "manifest-search"))
-  :depends-on (:alexandria :collectors :iterate :manifest :montezuma))
+  :depends-on (:alexandria :collectors :iterate :manifest :montezuma
+                           :swank ;; for introspection facilities
+                           ))
 
 ;; (defsystem :manifest-search-test
 ;;   :description "a test for manifest-search"

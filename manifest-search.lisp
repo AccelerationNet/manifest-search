@@ -117,20 +117,29 @@
      (make-field :id (cl-doc-key package thing type) nil)
      (make-field :name thing nil)
      (make-field :search-name thing)
-     (make-field :type type nil)
+     (make-field :type (case type
+                         (:function (if (macro-function thing)
+                                        :macro
+                                        :function))
+                         (T type)) nil)
      (make-field :package package nil)
-     (make-field :documentation docs))))
+     (make-field :documentation docs)
+     (case type
+       (:function
+        (make-field :arglist (swank::arglist thing))))
+     )))
 
 (defun make-package-doc (package &optional (type :package) package-package)
-  (doc-with-fields
-   (make-field :id (cl-doc-key nil package type)  nil)
-   (make-field :name (get-name package) nil)
-   (make-field :search-name (get-name package))
-   (make-field :nicknames (package-nicknames package))
-   (make-field :type type nil)
-   (make-field :package package-package nil)
-   (make-field :documentation (documentation package t))
-   (make-field :readme (manifest::readme-text package))))
+  (let ((pname (get-name package)))
+    (doc-with-fields
+     (make-field :id (cl-doc-key nil pname type)  nil)
+     (make-field :name pname nil)
+     (make-field :search-name pname)
+     (make-field :nicknames (package-nicknames package))
+     (make-field :type type nil)
+     (make-field :package package-package nil)
+     (make-field :documentation (documentation package t))
+     (make-field :readme (manifest::readme-text pname)))))
 
 (defun add-to-index (thing type package
                      &key
