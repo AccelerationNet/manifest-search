@@ -115,7 +115,8 @@
   (when docs
     (doc-with-fields
      (make-field :id (cl-doc-key package thing type) nil)
-     (make-field :name thing)
+     (make-field :name thing nil)
+     (make-field :search-name thing)
      (make-field :type type nil)
      (make-field :package package nil)
      (make-field :documentation docs))))
@@ -123,7 +124,8 @@
 (defun make-package-doc (package &optional (type :package) package-package)
   (doc-with-fields
    (make-field :id (cl-doc-key nil package type)  nil)
-   (make-field :name (package-name package))
+   (make-field :name (get-name package) nil)
+   (make-field :search-name (get-name package))
    (make-field :nicknames (package-nicknames package))
    (make-field :type type nil)
    (make-field :package package-package nil)
@@ -144,6 +146,13 @@
     (montezuma:add-document-to-index index new-doc)
     (montezuma:flush index)))
 
+(defun %delete-doc (doc)
+  (etypecase doc
+    (montezuma:document
+        (montezuma:delete-document
+         *cl-doc-index*
+         (document-key-term doc)))))
+
 (defun ensure-in-index (thing type package
                         &key
                           (index *cl-doc-index*)
@@ -163,14 +172,15 @@
               (package-for-name (second name))
               (error "No idea how to make package for name:~A" name)))))
 
-(defun index-package (package-name)
+(defun index-package (package-name &optional (index-contents? t))
   "Add package documentation and docs for all public symbols to the index"
   (let ((package (find-package package-name)))
     (add-to-index package :package nil)
-    (iter (for what in manifest::*categories*)
-      (iter (for name in (manifest::names package what))
-        (for name-package = (package-for-name name))
-        (add-to-index name what name-package)))
+    (when index-contents?
+      (iter (for what in manifest::*categories*)
+        (iter (for name in (manifest::names package what))
+          (for name-package = (package-for-name name))
+          (add-to-index name what name-package))))
     ))
 
 (defun index-packages (&key
@@ -196,6 +206,23 @@
     ((or integer montezuma::term string)
      (ignore-errors
       (montezuma:get-document *cl-doc-index* idx)))))
+
+(defun munge-index (doc-fn
+                    &key
+                      (include-packages? t)
+                      (include-contents? t)
+                      )
+  (when include-packages?
+    ;; handle packages
+    (%docs-for-term :type :package doc-fn))
+  
+  (when include-contents?
+    ;; handle package contents
+    (iter
+      (for p in (indexed-packages))
+      (iter
+        (for doc in (docs-for-term :package p))
+        (funcall doc-fn doc)))))
 
 (defun %docs-for-term (n v fn)
   (let* ((term (make-term n v))
@@ -236,12 +263,22 @@
     (print-docs-for-term :type what)
     (format T "~%-------------~%")))
 
+(defun document-key-term (doc)
+  (etypecase doc
+    (montezuma:document
+        (make-term :id (doc-value doc :id)))))
+
+(defun get-name (package)
+  (typecase package
+    (null "")
+    (package (package-name package))
+    (t package)))
+
 (defun cl-doc-key (package name type)
   (format nil "~A:~A:~A"
-          (typecase package
-            (package (package-name package))
-            (t package))
-          name type))
+          (get-name package)
+          (get-name name)
+          (get-name type)))
 
 (defun cl-doc-key-term (package name type)
   (make-term :id (cl-doc-key package name type)))
