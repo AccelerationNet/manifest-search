@@ -130,8 +130,8 @@
      (case type
        (:function
         (let ((arglist (ignore-errors (swank::arglist thing))))
-        (when arglist
-         (make-field :arglist arglist )))))
+          (when arglist
+            (make-field :arglist arglist )))))
      )))
 
 (defun make-package-doc (package &optional (type :package) package-package)
