@@ -46,8 +46,8 @@
     (t (princ-to-string thing))))
 
 (defparameter +index-path+
-  #P"/home/quicklisp-builder/quicklisp/doc-index"
-;;  #P"~/quicklisp/doc-index"
+;;  #P"/home/quicklisp-builder/quicklisp/doc-index"
+  #P"~/quicklisp/doc-index"
               "The location of the persistent document-index")
 
 (defvar *cl-doc-index* nil
