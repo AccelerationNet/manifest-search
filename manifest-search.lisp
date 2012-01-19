@@ -25,24 +25,12 @@
 ;; UTILS
 ;;
 
-(defun join-strings (list
-                     &optional (delim ", ")
-                     (ignore-empty-strings-and-nil t))
-  "Join a list of strings into a single longer string
-   (optionally with a delimiter and ignoring empty/nil elements)
-  "
-  (collectors:with-string-builder-output
-      (collect :delimiter delim
-        :ignore-empty-strings-and-nil ignore-empty-strings-and-nil)
-    (iter (for i in (ensure-list list)) (collect (%to-s i)))))
-
 (defun %to-s (thing)
   "Turns whatever we were given into an indexable string"
   (typecase thing
     (null "")
     (string thing)
     (package (package-name thing))
-    (list (join-strings thing))
     (t (princ-to-string thing))))
 
 (defparameter +index-path+
@@ -142,16 +130,13 @@
      (case type
        ((:function :macro)
         (let ((arglist (ignore-errors (swank::arglist thing))))
-          (when arglist (make-field
-                         :arglist
-                         ;; dont use standard list translation
-                         (princ-to-string arglist)))))) )
+          (when arglist (make-field :arglist (%to-s arglist)))))) )
     ))
 
 (defun package-designator (n)
   (typecase n
     (keyword n)
-    (T (intern (get-name n) :keyword))))
+    (T (intern (%to-s n) :keyword))))
 
 (defun package-document (n)
   (setf n (package-designator n))
@@ -317,18 +302,11 @@
     (montezuma:document
         (make-term :id (doc-value doc :id)))))
 
-(defun get-name (package)
-  (etypecase package
-    (null "")
-    (package (package-name package))
-    (symbol (%to-s package))
-    (string package)))
-
 (defun cl-doc-key (package name type)
   (format nil "~A:~A:~A"
-          (get-name package)
-          (get-name name)
-          (get-name type)))
+          (%to-s package)
+          (%to-s name)
+          (%to-s type)))
 
 (defun cl-doc-key-term (package name type)
   (make-term :id (cl-doc-key package name type)))
