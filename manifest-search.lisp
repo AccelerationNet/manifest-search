@@ -7,6 +7,7 @@
    :index-package
    :index-packages
    :indexed-packages
+   :package-document
    :search-manifest
    :search-manifest-collecting
    :print-index-contents
@@ -44,7 +45,9 @@
     (list (join-strings thing))
     (t (princ-to-string thing))))
 
-(defparameter +index-path+ #P"~/quicklisp/doc-index"
+(defparameter +index-path+
+  #P"/home/quicklisp-builder/quicklisp/doc-index"
+;;  #P"~/quicklisp/doc-index"
               "The location of the persistent document-index")
 
 (defvar *cl-doc-index* nil
@@ -101,7 +104,8 @@
     doc))
 
 (defun make-field (name value &optional
-                              (tokenize? t))
+                              (tokenize? t)
+                              )
   (montezuma:make-field
    (%to-s name)
    (%to-s value)
@@ -110,41 +114,62 @@
 (defun is-macro? (thing)
   (ignore-errors (macro-function thing)))
 
+
+(defun delete-package-contents-from-index (package)
+  (mapc #'%delete-doc
+          (docs-for-term :package (package-designator package)))
+  (montezuma:flush *cl-doc-index*))
+
+
 (defun make-default-doc (thing
                          &optional type package
                          &aux (docs (manifest::docs-for thing type)))
   ;; TODO: figure out how to filter by missing documentation then always return
   ;; the doc instead of not adding docs with missing documentation
+  (setf type (case type
+               (:function (if (is-macro? thing) 
+                              :macro
+                              :function))
+               (T type)))
   (when docs
     (doc-with-fields
      (make-field :id (cl-doc-key package thing type) nil)
      (make-field :name thing nil)
      (make-field :search-name thing)
-     (make-field :type (case type
-                         (:function (if (is-macro? thing) 
-                                        :macro
-                                        :function))
-                         (T type)) nil)
+     (make-field :type type nil)
      (make-field :package package nil)
      (make-field :documentation docs)
      (case type
-       (:function
+       ((:function :macro)
         (let ((arglist (ignore-errors (swank::arglist thing))))
-          (when arglist
-            (make-field :arglist arglist )))))
-     )))
+          (when arglist (make-field
+                         :arglist
+                         ;; dont use standard list translation
+                         (princ-to-string arglist)))))) )
+    ))
+
+(defun package-designator (n)
+  (typecase n
+    (keyword n)
+    (T (intern (get-name n) :keyword))))
+
+(defun package-document (n)
+  (setf n (package-designator n))
+  (find-doc-by-key nil n :package))
 
 (defun make-package-doc (package &optional (type :package) package-package)
-  (let ((pname (get-name package)))
-    (doc-with-fields
-     (make-field :id (cl-doc-key nil pname type)  nil)
-     (make-field :name pname nil)
-     (make-field :search-name pname)
-     (make-field :nicknames (package-nicknames package))
-     (make-field :type type nil)
-     (make-field :package package-package nil)
-     (make-field :documentation (documentation package t))
-     (make-field :readme (manifest::readme-text pname)))))
+  (let* ((pname (package-designator package))
+         (readme (manifest::readme-text pname))
+         (doc (doc-with-fields
+               (make-field :id (cl-doc-key nil pname type)  nil)
+               (make-field :name pname nil)
+               (make-field :search-name pname)
+               (make-field :nicknames (package-nicknames package))
+               (make-field :type type nil)
+               (make-field :package package-package nil)
+               (make-field :documentation (documentation package t))
+               (make-field :readme readme))))
+    doc))
 
 (defun add-to-index (thing type package
                      &key
@@ -181,6 +206,7 @@
 
 (defun package-for-name (name)
   (etypecase name
+    (package name)
     (symbol (package-name (symbol-package name)))
     (cons (if (eql 'setf (first name))
               (package-for-name (second name))
@@ -292,10 +318,11 @@
         (make-term :id (doc-value doc :id)))))
 
 (defun get-name (package)
-  (typecase package
+  (etypecase package
     (null "")
     (package (package-name package))
-    (t package)))
+    (symbol (%to-s package))
+    (string package)))
 
 (defun cl-doc-key (package name type)
   (format nil "~A:~A:~A"
@@ -317,9 +344,10 @@
 (defun make-default-search-collector (result-collector)
   (lambda (d &optional score)
     (collectors:with-collector (rtn)
-      (iter (for n in (list :package :name :type :documentation))
-        (rtn n (doc-value d n)))
-      (when (eql :package (doc-value d :type))
+      (iter (for n in (list :package :name :type :documentation :arglist))
+        (for v = (doc-value d n))
+        (when v (rtn n v)))
+      (when (doc-value d :readme)
         (rtn :readme (doc-value d :readme)))
       (rtn :score score)
       (funcall result-collector (rtn)))))
