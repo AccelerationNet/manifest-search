@@ -108,27 +108,30 @@
           (docs-for-term :package (package-designator package)))
   (montezuma:flush *cl-doc-index*))
 
+(defun canonicalize-type (thing type)
+  (case type
+    (:function (if (is-macro? thing) 
+                   :macro
+                   :function))
+    (T type)))
+
 
 (defun make-default-doc (thing
                          &optional type package
                          &aux (docs (manifest::docs-for thing type)))
   ;; TODO: figure out how to filter by missing documentation then always return
   ;; the doc instead of not adding docs with missing documentation
-  (setf type (case type
-               (:function (if (is-macro? thing) 
-                              :macro
-                              :function))
-               (T type)))
   (when docs
     (doc-with-fields
      (make-field :id (cl-doc-key package thing type) nil)
      (make-field :name thing nil)
      (make-field :search-name thing)
-     (make-field :type type nil)
+     (make-field :type (canonicalize-type thing type) nil)
+     (make-field :actual-type type nil)
      (make-field :package package nil)
      (make-field :documentation docs)
      (case type
-       ((:function :macro)
+       (:function 
         (let ((arglist (ignore-errors (swank::arglist thing))))
           (when arglist (make-field :arglist (%to-s arglist)))))) )
     ))
