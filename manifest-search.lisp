@@ -35,7 +35,7 @@
 
 (defparameter +index-path+
 ;;  #P"/home/quicklisp-builder/quicklisp/doc-index"
-  #P"~/quicklisp/doc-index"
+  #P"~/quicklisp/doc-index/"
               "The location of the persistent document-index")
 
 (defvar *cl-doc-index* nil
@@ -200,7 +200,9 @@
               (package-for-name (second name))
               (error "No idea how to make package for name:~A" name)))))
 
-(defun index-package (package-name &optional (index-contents? t))
+(defun index-package (package-name
+                      &key (index-contents? t)
+                      (create-html? t))
   "Add package documentation and docs for all public symbols to the index"
   (let ((package (find-package package-name)))
     (add-to-index package :package nil)
@@ -209,7 +211,8 @@
         (iter (for name in (manifest::names package what))
           (for name-package = (package-for-name name))
           (add-to-index name what name-package))))
-    ))
+    (when create-html?
+      (make-package-html package-name))))
 
 (defun index-packages (&key
                        (packages (list-all-packages))
@@ -383,3 +386,52 @@
     (appending (ql-dist:provided-systems d))))
 
 (defun asdf-loaded-systems () asdf::*defined-systems*)
+
+(defun page-template (package &rest body)
+  (html5:html ()
+    (html5:head ()
+      (html5:title () package)
+      (html5:link '(:type "text/css"
+                    :href "../style.css"
+                    :rel "stylesheet")))
+    (html5:body ()
+      (html5:div '(:class "page")
+        (html5:header ()
+          (html5:h1 '(:class "title") package)
+          (html5:div '(:class "doc")
+            (documentation (find-package package) t))
+          (html5:div '(:class "readme")
+            (manifest::readme-text package)))
+        (html5:article () body)
+        (html5:footer () )))))
+
+(defun package-to-file-name (package)
+  package)
+
+(defun make-package-html (package)
+  (let ((path (index-html-path (package-to-file-name package))))
+    (buildnode:with-html5-document-to-file (path)
+      (page-template
+       package
+       (iter (for what in manifest::*categories*)
+         (collect
+             (html5:section ()
+               (html5:h3 () what)
+               (iter (for name in (manifest::names package what))
+                 (for docs = (manifest::docs-for name what))
+                 (collect (html5:div '(:class "item")
+                            (html5:h4 () name)
+                            (html5:div '(:class "doc")
+                              docs)))))))))))
+
+(defun make-package-json (package))
+
+(defun index-html-path (package-name &optional (root +index-path+))
+  (let ((dir (merge-pathnames #p"html/" root)))
+    (cl:ensure-directories-exist dir)
+    (merge-pathnames (format nil "~a.html" package-name) dir)))
+
+(defun index-json-path (package-name &optional (root +index-path+))
+  (let ((dir (merge-pathnames (merge-pathnames #p"json/" root))))
+    (cl:ensure-directories-exist dir)
+    (merge-pathnames (format nil "~a.json" package-name) dir)))

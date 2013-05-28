@@ -14,6 +14,8 @@
   :components ((:file "manifest-search"))
   :depends-on (:alexandria :collectors :iterate :manifest :montezuma
                            :swank ;; for introspection facilities
+                           :buildnode-html5 ;; for making static html
+                           :cl-markdown
                            ))
 
 ;; (defsystem :manifest-search-test
