@@ -1,0 +1,11 @@
+code {font-family:monospace; white-space:pre;}
+.readme {background-color: #FFD;}
+.txt { white-space:pre; }
+.clearer {clear:both; font-size:0;color:transparent; line-height:0;}
+
+.item h1{border-bottom:1px solid #CCF;}
+.no-docs > .item {float:left; padding:3px; border:1px solid blue; margin:5px;}
+.no-docs > .item h1 {margin:0; border:0; padding:0;}
+
+section h1 {margin:5px 0; font-size:1.2em;}
+section { margin: 0 0 25px 10px; padding-left: 10px; border-left: 1px solid #CFC;}

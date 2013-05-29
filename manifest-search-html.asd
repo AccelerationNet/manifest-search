@@ -7,27 +7,15 @@
 
 (in-package manifest-search.system)
 
-(defsystem :manifest-search
-  :description "index and search common lisp documentation using montezuma and manifest"
+(defsystem :manifest-search-html
+  :description "index and search common lisp documentation using montezuma and manifest, this sub system creates a static HTML directory containing the literal documentation."
   :licence "BSD"
   :version "0.1"
-  :components ((:file "packages")
-               (:file "manifest-search"))
-  :depends-on (:alexandria :collectors :iterate :manifest :montezuma
-                           :swank ;; for introspection facilities
-                           ))
-
-;; (defsystem :manifest-search-test
-;;   :description "a test for manifest-search"
-;;   :licence "BSD"
-;;   :version "0.1"
-;;   :components ((:module :tests
-;; 			:serial t
-;; 			:components ((:file "manifest-search"))))
-;;   :depends-on (:manifest-search :lisp-unit))
-
-(defmethod asdf:perform ((o asdf:test-op) (c (eql (find-system :manifest-search))))
-  (asdf:oos 'asdf:load-op :manifest-search-test))
+  :components ((:file "manifest-search"))
+  :depends-on (:manifest-search
+               :buildnode-html5 ;; for making static html
+               :cl-markdown :cl-interpol
+               ))
 
 ;; Copyright (c) 2011 Russ Tyndall , Acceleration.net http://www.acceleration.net
 ;; All rights reserved.

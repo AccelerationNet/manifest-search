@@ -1,25 +1,6 @@
 ;; -*- lisp -*-
-
-(cl:defpackage :manifest-search
-  (:use :cl :cl-user :iterate)
-  (:shadowing-import-from :alexandria :ensure-list)
-  (:export
-   :index-package
-   :index-packages
-   :indexed-packages
-   :package-document
-   :search-manifest
-   :search-manifest-collecting
-   :print-index-contents
-   :load-index
-   :close-index
-   :reload-index
-   :switch-index
-   :+index-path+
-   :ql-installable-systems
-   ))
-
 (in-package :manifest-search)
+
 
 ;;
 ;; UTILS
@@ -115,6 +96,9 @@
                    :function))
     (T type)))
 
+(defun argslist-maybe (thing)
+  (ignore-errors (swank::arglist thing)))
+
 
 (defun make-default-doc (thing
                          &optional type package
@@ -130,11 +114,8 @@
      (make-field :actual-type type nil)
      (make-field :package package nil)
      (make-field :documentation docs)
-     (case type
-       (:function 
-        (let ((arglist (ignore-errors (swank::arglist thing))))
-          (when arglist (make-field :arglist (%to-s arglist)))))) )
-    ))
+     (let ((arglist (argslist-maybe thing)))
+       (when arglist (make-field :arglist (%to-s arglist)))))))
 
 (defun package-designator (n)
   (typecase n
@@ -387,51 +368,3 @@
 
 (defun asdf-loaded-systems () asdf::*defined-systems*)
 
-(defun page-template (package &rest body)
-  (html5:html ()
-    (html5:head ()
-      (html5:title () package)
-      (html5:link '(:type "text/css"
-                    :href "../style.css"
-                    :rel "stylesheet")))
-    (html5:body ()
-      (html5:div '(:class "page")
-        (html5:header ()
-          (html5:h1 '(:class "title") package)
-          (html5:div '(:class "doc")
-            (documentation (find-package package) t))
-          (html5:div '(:class "readme")
-            (manifest::readme-text package)))
-        (html5:article () body)
-        (html5:footer () )))))
-
-(defun package-to-file-name (package)
-  package)
-
-(defun make-package-html (package)
-  (let ((path (index-html-path (package-to-file-name package))))
-    (buildnode:with-html5-document-to-file (path)
-      (page-template
-       package
-       (iter (for what in manifest::*categories*)
-         (collect
-             (html5:section ()
-               (html5:h3 () what)
-               (iter (for name in (manifest::names package what))
-                 (for docs = (manifest::docs-for name what))
-                 (collect (html5:div '(:class "item")
-                            (html5:h4 () name)
-                            (html5:div '(:class "doc")
-                              docs)))))))))))
-
-(defun make-package-json (package))
-
-(defun index-html-path (package-name &optional (root +index-path+))
-  (let ((dir (merge-pathnames #p"html/" root)))
-    (cl:ensure-directories-exist dir)
-    (merge-pathnames (format nil "~a.html" package-name) dir)))
-
-(defun index-json-path (package-name &optional (root +index-path+))
-  (let ((dir (merge-pathnames (merge-pathnames #p"json/" root))))
-    (cl:ensure-directories-exist dir)
-    (merge-pathnames (format nil "~a.json" package-name) dir)))
