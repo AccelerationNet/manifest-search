@@ -123,19 +123,29 @@
    (iter (for sec in (sections p))
      (collect (html-of sec)))))
 
-(defun make-package-html (package)
+(defun create-package-html (package &optional (overwrite? t))
   (let ((*print-case* :downcase)
-        (path (index-html-path (package-to-file-name package)))
-        (docs (make-package-docs package)))
-    (buildnode:with-html5-document-to-file (path)
-      (html-of docs))))
+        (path (index-html-path (package-to-file-name package))))
+    (when (or overwrite?
+              (not (cl-fad:file-exists-p path)))
+      (let ((docs (make-package-docs package)))
+        (buildnode:with-html5-document-to-file (path)
+          (html-of docs))))))
+
+(defun remove-html-index ()
+  (cl-fad:delete-directory-and-files (index-html-path)))
+
+(defun ensure-package-html (package)
+  (create-package-html package nil))
 
 ;(defun make-package-json (package))
 
-(defun index-html-path (name &optional (root +index-path+))
+(defun index-html-path (&optional name (root +index-path+))
   (let ((dir (merge-pathnames #p"html/" root)))
     (cl:ensure-directories-exist dir)
-    (merge-pathnames name dir)))
+    (if name
+        (merge-pathnames name dir)
+        dir)))
 
 (defun index-json-path (package-name &optional (root +index-path+))
   (let ((dir (merge-pathnames (merge-pathnames #p"json/" root))))
@@ -154,19 +164,24 @@
 (defun page-template (package &rest body)
   (html5:html ()
     (html5:head ()
-      (html5:title () "Common Lisp Package: " package)
+      (html5:title () package " | Common Lisp Package")
       (html5:link '(:type "text/css" :href "style.css" :rel "stylesheet")))
     (html5:body ()
       (html5:div '(:class "page")
         (html5:header ()
-          (html5:h1 '(:class "title") "Common Lisp Package: " package)
+          (html5:h1 '(:class "title")
+            "Common Lisp Package: " package)
+          (let ((url (web-address-for-package package)))
+            (html5:div () "Quicklisp Source: " (html5:a `(:href ,url) url)))
           (html5:section '(:class "doc")
             (documentation (find-package package) t))
           (html5:section '(:class "readme")
-            (xhtml:h1 () "README: ")
+            (html5:h1 () "README: ")
             (readme-html package)))
         (html5:article () body)
-        (html5:footer () )))))
+        (html5:footer ()
+          (html5:a '(:href "index.html")
+            "view the full quicklisp package index"))))))
 
 (defun readme-html (package)
   (let ((pth (manifest::find-readme package))
@@ -178,10 +193,56 @@
           1 (cl-markdown:markdown rm :stream nil)))
         (html5:div `(:class "txt") rm))))
 
-(defmethod write-stylesheet ()
+(defmethod create-stylesheet ()
   (alexandria:write-string-into-file
    (alexandria:read-file-into-string
     (asdf:system-relative-pathname :manifest-search "style.css"))
    (index-html-path "style.css")
    :if-exists :SUPERSEDE)
   (values))
+
+(defun get-uri-for-source (src)
+  (cl-ppcre:scan-to-strings #?r"\w*://[^\s]*" src))
+
+(defun web-address-for-source (src)
+  (let* ((uri (get-uri-for-source src))
+         (github? (cl-ppcre:scan "github" uri)))
+    (cond
+      (github? (cl-ppcre:regex-replace "\.git$"
+                (cl-ppcre:regex-replace "git://" uri "http://")
+                ""))
+      (t uri))))
+
+(defun web-address-for-package (package)
+  (web-address-for-source (quicklisp-origin package)))
+
+(defun quicklisp-origin (ql-name)
+  (let* ((ql-name (string-downcase ql-name))
+         (pth (asdf:system-relative-pathname
+               :manifest-search #?"quicklisp-projects/${ql-name}/source.txt"))
+         (content (ignore-errors (alexandria:read-file-into-string pth))))
+    (values
+     (web-address-for-source content)
+     content pth)))
+
+(defun index-list-items ()
+  (iter (for file in (cl-fad:list-directory (index-html-path)))
+    (for ext = (pathname-type file))
+    (unless (string-equal ext "html")
+      (next-iteration))
+    (for name = (pathname-name file))
+    (when (member name '("index") :test #'string-equal)
+      (next-iteration))
+    (for u = (web-address-for-package name))
+    (collect (html5:li ()
+               (html5:a `(:href ,#?"${name}.html") name)
+               (when u (list " - origin: " (html5:a `(:href ,u) u)))))))
+
+(defun create-index-html-from-files ()
+  (buildnode:with-html5-document-to-file ((index-html-path "index.html"))
+    (html5:html ()
+      (html5:head ()
+        (html5:title () "Quicklisp Documentation Index"))
+      (html5:body ()
+        (xhtml:h1 () "Quicklisp Documentation Index")
+        (html5:ul () (index-list-items))))))

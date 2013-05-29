@@ -15,6 +15,7 @@
   :depends-on (:manifest-search
                :buildnode-html5 ;; for making static html
                :cl-markdown :cl-interpol
+               :cl-ppcre :cl-fad
                ))
 
 ;; Copyright (c) 2011 Russ Tyndall , Acceleration.net http://www.acceleration.net

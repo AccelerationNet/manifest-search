@@ -15,7 +15,7 @@
                (:file "manifest-search"))
   :depends-on (:alexandria :collectors :iterate :manifest :montezuma
                            :swank ;; for introspection facilities
-                           ))
+                           :symbol-munger))
 
 ;; (defsystem :manifest-search-test
 ;;   :description "a test for manifest-search"

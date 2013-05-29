@@ -16,5 +16,11 @@
    :switch-index
    :+index-path+
    :ql-installable-systems
+
+   #:create-index-html-from-files
+   #:create-stylesheet
+   #:create-package-html
+   #:ensure-package-html
+   #:remove-html-index
    ))
 
