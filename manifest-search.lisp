@@ -182,8 +182,7 @@
               (error "No idea how to make package for name:~A" name)))))
 
 (defun index-package (package-name
-                      &key (index-contents? t)
-                      (create-html? t))
+                      &key (index-contents? t))
   "Add package documentation and docs for all public symbols to the index"
   (let ((package (find-package package-name)))
     (add-to-index package :package nil)
@@ -191,9 +190,7 @@
       (iter (for what in manifest::*categories*)
         (iter (for name in (manifest::names package what))
           (for name-package = (package-for-name name))
-          (add-to-index name what name-package))))
-    (when create-html?
-      (make-package-html package-name))))
+          (add-to-index name what name-package))))))
 
 (defun index-packages (&key
                        (packages (list-all-packages))
