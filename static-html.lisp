@@ -60,7 +60,7 @@
     (doc-section (items thing))
     (list thing)))
 
-(defun %doc-items-matching (items
+(defun doc-items-matching (items
                             &key what
                             (documented? nil documented?-provided)
                             (exported? nil exported?-provided))
