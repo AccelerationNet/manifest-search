@@ -11,7 +11,7 @@
   :description "index and search common lisp documentation using montezuma and manifest, this sub system creates a static HTML directory containing the literal documentation."
   :licence "BSD"
   :version "0.1"
-  :components ((:file "manifest-search"))
+  :components ((:file "static-html"))
   :depends-on (:manifest-search
                :buildnode-html5 ;; for making static html
                :cl-markdown :cl-interpol
