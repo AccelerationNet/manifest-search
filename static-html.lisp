@@ -190,10 +190,19 @@
           (html5:a '(:href "index.html")
             "view the full quicklisp package index"))))))
 
-(defun readme-html (package)
+(defun escape-for-html (txt)
+  (when txt
+    (flet ((rep (in out)
+             (setf txt (cl-ppcre:regex-replace-all in txt out))))
+      (rep ">" "&gt;")
+      (rep "<" "&lt;")
+      (rep "&" "&amp;"))))
+
+(defun readme-html (package) 
   (let* ((pname (package-keyword package))
          (pth (manifest::find-readme pname))
-         (rm (manifest::readme-text pname)))
+         (rm (escape-for-html
+              (manifest::readme-text pname))))
     (if (and pth (string-equal "md" (pathname-type pth)))
         ;; TODO: make buildnode / CXML:DOM be an available renderer for markdown
         (buildnode:inner-html
