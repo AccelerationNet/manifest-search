@@ -22,7 +22,10 @@
   (stable-sort
    items
    #'string-lessp
-   :key (lambda (x) (string (name x)))))
+   :key (lambda (x &aux (n (name x)))
+          (typecase n
+            ((or string symbol) (string n))
+            (list (string (second n)))))))
 
 (defun make-doc-section (pname sigil-type)
   (make-instance 'doc-section
