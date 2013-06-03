@@ -191,12 +191,17 @@
             "view the full quicklisp package index"))))))
 
 (defun escape-for-html (txt)
+  "Escapes the characters #\\<, #\\>, #\\', #\\\", and #\\& for HTML output."
   (when txt
-    (flet ((rep (in out)
-             (setf txt (cl-ppcre:regex-replace-all in txt out))))
-      (rep ">" "&gt;")
-      (rep "<" "&lt;")
-      (rep "&" "&amp;"))))
+    (with-output-to-string (out)
+      (with-input-from-string (in txt)
+        (loop for char = (read-char in nil nil)
+              while char
+              do (case char
+                   ((#\<) (write-string "&lt;" out))
+                   ((#\>) (write-string "&gt;" out))
+                   ((#\&) (write-string "&amp;" out))
+                   (otherwise (write-char char out))))))))
 
 (defun readme-html (package) 
   (let* ((pname (package-keyword package))
