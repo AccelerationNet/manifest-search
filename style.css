@@ -1,4 +1,12 @@
 * {font-family:monospace;}
+
+body {
+   width: 960px;
+   padding: 10px 10px 75px 10px;
+   font-family: "Gill Sans", sans-serif;
+   background: url(lisp-logo.jpg)  bottom right transparent no-repeat;
+}
+
 code {font-family:monospace; white-space:pre;}
 .readme {background-color: #FFD;}
 .txt { white-space:pre; }

@@ -221,6 +221,12 @@
     (asdf:system-relative-pathname :manifest-search "style.css"))
    (index-html-path "style.css")
    :if-exists :SUPERSEDE)
+
+  (alexandria:write-byte-vector-into-file
+   (alexandria:read-file-into-byte-vector
+    (asdf:system-relative-pathname :manifest-search "lisp-logo.jpg"))
+   (index-html-path "lisp-logo.jpg")
+   :if-exists :SUPERSEDE)
   (values))
 
 (defun get-uri-for-source (src)
