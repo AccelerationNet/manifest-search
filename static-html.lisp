@@ -244,5 +244,5 @@
       (html5:head ()
         (html5:title () "Quicklisp Documentation Index"))
       (html5:body ()
-        (xhtml:h1 () "Quicklisp Documentation Index")
+        (html5:h1 () "Quicklisp Documentation Index")
         (html5:ul () (index-list-items))))))
