@@ -124,11 +124,12 @@
      (collect (html-of sec)))))
 
 (defun create-package-html (package &optional (overwrite? t))
-  (let ((*print-case* :downcase)
-        (path (index-html-path (package-to-file-name package))))
+  (let* ((pname (package-keyword package))
+         (*print-case* :downcase)
+         (path (index-html-path (package-to-file-name pname))))
     (when (or overwrite?
               (not (cl-fad:file-exists-p path)))
-      (let ((docs (make-package-docs package)))
+      (let ((docs (make-package-docs pname)))
         (buildnode:with-html5-document-to-file (path)
           (html-of docs))))))
 
@@ -184,8 +185,9 @@
             "view the full quicklisp package index"))))))
 
 (defun readme-html (package)
-  (let ((pth (manifest::find-readme package))
-        (rm (manifest::readme-text package)))
+  (let* ((pname (package-keyword package))
+         (pth (manifest::find-readme pname))
+         (rm (manifest::readme-text pname)))
     (if (and pth (string-equal "md" (pathname-type pth)))
         ;; TODO: make buildnode / CXML:DOM be an available renderer for markdown
         (buildnode:inner-html
@@ -217,7 +219,7 @@
   (web-address-for-source (quicklisp-origin package)))
 
 (defun quicklisp-origin (ql-name)
-  (let* ((ql-name (string-downcase ql-name))
+  (let* ((ql-name (string-downcase (package-keyword ql-name)))
          (pth (asdf:system-relative-pathname
                :manifest-search #?"quicklisp-projects/${ql-name}/source.txt"))
          (content (ignore-errors (alexandria:read-file-into-string pth))))

@@ -57,6 +57,11 @@
   (close-index)  
   (load-index))
 
+(defun package-keyword (it)
+  (etypecase it
+    (package (intern (package-name it) :keyword))
+    (string (intern it :keyword))
+    (keyword it)))
 
 (defun doc-fn (type)
   "Try to find a specific make-doc function, failing that return make-default-doc"
