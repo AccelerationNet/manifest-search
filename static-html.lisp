@@ -42,7 +42,10 @@
 (defun is-symbol-exported? (sym package)
   (etypecase sym
     (symbol (is-symbol-exported? (string sym) package))
-    (string (eql :external (nth-value 1 (find-symbol sym package))))))
+    (string (eql :external (nth-value 1 (find-symbol sym package))))
+    (list (if (eql 'setf (first sym))
+              (is-symbol-exported? (second sym) package)
+              nil))))
 
 (defmethod documented? ((item doc-item)) (docs item))
 
