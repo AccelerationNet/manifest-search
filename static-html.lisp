@@ -178,8 +178,13 @@
         (html5:header ()
           (html5:h1 '(:class "title")
             "Common Lisp Package: " package)
-          (let ((url (web-address-for-package package)))
-            (html5:div () "Quicklisp Source: " (html5:a `(:href ,url) url)))
+          (html5:ul '(:class "meta")
+            (let ((url (web-address-for-package package)))
+              (html5:li () "Quicklisp Source: " (html5:a `(:href ,url) url)))
+            (html5:li ()
+              (html5:a '(:href "index.html")
+                "Quicklip Package Index")))
+          (html5:div '(:class "clearer"))
           (html5:section '(:class "doc")
             (documentation (find-package package) t))
           (html5:section '(:class "readme")
@@ -188,7 +193,11 @@
         (html5:article () body)
         (html5:footer ()
           (html5:a '(:href "index.html")
-            "view the full quicklisp package index"))))))
+            "view the full quicklisp package index")
+          " "
+          (html5:a '(:href "http://www.sbcl.org/") "Our Primary Implementation: SBCL")
+          " Compiled by:"
+          (html5:a '(:href "http://www.acceleration.net") "Acceleration.net"))))))
 
 (defun escape-for-html (txt)
   "Escapes the characters #\\<, #\\>, #\\', #\\\", and #\\& for HTML output."
